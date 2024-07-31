@@ -141,6 +141,7 @@ const PlanCard: React.FC<Plan> = ({
               style={{ width: "100%" }}
               placeholder="Select a goal"
               onChange={handleGoalSelect}
+              dropdownStyle={{ width: "680px" }}
             >
               {workoutGoals.map((goal, index) => (
                 <Option key={index} value={goal}>

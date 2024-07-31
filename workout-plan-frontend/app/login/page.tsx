@@ -9,19 +9,23 @@ const { Title, Text } = Typography;
 
 export default function Login() {
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
 
   const handleSubmit = async (values: { email: string; password: string }) => {
+    setLoading(true);
     const res = await signIn("credentials", {
       email: values.email,
       password: values.password,
       redirect: false,
     });
     if (res?.error) {
+      setLoading(false);
       setError(res.error as string);
     }
     if (res?.ok) {
       router.push("/");
+      setLoading(false);
     }
   };
 
@@ -50,7 +54,12 @@ export default function Login() {
           <Input.Password placeholder="Password" size="large" allowClear />
         </Form.Item>
         <Form.Item>
-          <Button type="primary" htmlType="submit" className="w-full">
+          <Button
+            type="primary"
+            htmlType="submit"
+            className="w-full"
+            loading={loading}
+          >
             Sign In
           </Button>
         </Form.Item>

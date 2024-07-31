@@ -9,6 +9,7 @@ const { Title, Text } = Typography;
 
 export default function Register() {
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
 
   const handleSubmit = async (values: {
@@ -16,6 +17,7 @@ export default function Register() {
     password: string;
     name: string;
   }) => {
+    setLoading(true);
     const res = await register({
       email: values.email,
       password: values.password,
@@ -24,8 +26,10 @@ export default function Register() {
 
     if (res?.error) {
       setError(res.error);
+      setLoading(false);
     } else {
       router.push("/login");
+      setLoading(false);
     }
   };
 
@@ -70,7 +74,12 @@ export default function Register() {
         </Form.Item>
 
         <Form.Item>
-          <Button type="primary" htmlType="submit" className="w-full">
+          <Button
+            type="primary"
+            htmlType="submit"
+            className="w-full"
+            loading={loading}
+          >
             Sign Up
           </Button>
         </Form.Item>
