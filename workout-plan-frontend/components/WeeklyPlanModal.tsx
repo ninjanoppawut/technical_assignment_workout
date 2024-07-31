@@ -88,10 +88,7 @@ const WeeklyPlanModal: React.FC<WeeklyPlanModalProps> = ({
     };
     try {
       const response = await axios
-        .post(
-          `${process.env.NEXT_PUBLIC_URL}/api/weekly-workout/create`,
-          workoutPlanData
-        )
+        .post(`/api/weekly-workout/create`, workoutPlanData)
         .then((response) => {
           const workoutPlans = response.data;
           // console.log(workoutPlans);
