@@ -15,8 +15,10 @@ interface FormData {
   weight: string;
   weeklyActivities: WeeklyActivity[];
 }
-
-const Form1: React.FC = () => {
+interface Form1Props {
+  hasPersonalData: (exists: boolean) => void;
+}
+const Form1: React.FC<Form1Props> = ({ hasPersonalData }) => {
   const { data: session, status } = useSession();
 
   const [formData, setFormData] = useState<FormData>({
@@ -66,9 +68,11 @@ const Form1: React.FC = () => {
       await axios
         .post("http://localhost:3000/api/form-submission", formData)
         .then((response) => {
-          console.log(response.data);
+          console.log(response.data.message);
+          if (response.data.message === "Form data saved successfully!") {
+            hasPersonalData(true);
+          }
         });
-      console.log("Form data saved successfully!");
     } catch (error) {
       console.error("Error saving form data:", error);
     }

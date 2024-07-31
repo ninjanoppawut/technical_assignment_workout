@@ -11,7 +11,7 @@ function Navbar() {
       <div className="container mx-auto flex justify-between items-center">
         <div className="text-white">
           <Link href="/">
-            <p className="text-lg font-semibold">Home</p>
+            <p className="text-lg font-semibold">Workout Planner</p>
           </Link>
         </div>
         <div>
