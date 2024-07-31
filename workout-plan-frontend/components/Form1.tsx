@@ -1,7 +1,18 @@
 "use client";
-import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
+import React, { useState, useEffect, ChangeEvent } from "react";
 import { useSession } from "next-auth/react";
 import axios from "axios";
+import {
+  Form,
+  Input,
+  Button,
+  DatePicker,
+  Space,
+  Row,
+  message,
+  InputNumber,
+} from "antd";
+import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 
 interface WeeklyActivity {
   activity: string;
@@ -15,12 +26,15 @@ interface FormData {
   weight: string;
   weeklyActivities: WeeklyActivity[];
 }
+
 interface Form1Props {
   hasPersonalData: (exists: boolean) => void;
 }
+
 const Form1: React.FC<Form1Props> = ({ hasPersonalData }) => {
   const { data: session, status } = useSession();
 
+  const [form] = Form.useForm();
   const [formData, setFormData] = useState<FormData>({
     planOwner: "",
     planName: "",
@@ -30,53 +44,37 @@ const Form1: React.FC<Form1Props> = ({ hasPersonalData }) => {
     weeklyActivities: [{ activity: "" }],
   });
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleActivityChange = (
-    index: number,
-    event: ChangeEvent<HTMLInputElement>
-  ) => {
-    const newWeeklyActivities = formData.weeklyActivities.map(
-      (activity, idx) => {
-        if (idx !== index) return activity;
-        return { ...activity, activity: event.target.value };
-      }
-    );
-    setFormData({ ...formData, weeklyActivities: newWeeklyActivities });
-  };
-
-  const addActivity = () => {
-    setFormData({
+  const handleSubmit = async (values: any) => {
+    const dataToSubmit = {
       ...formData,
-      weeklyActivities: [...formData.weeklyActivities, { activity: "" }],
-    });
-  };
+      ...values,
+      dateOfBirth: values.dateOfBirth.format("YYYY-MM-DD"),
+    };
 
-  const removeActivity = (index: number) => {
-    const newWeeklyActivities = formData.weeklyActivities.filter(
-      (_, idx) => idx !== index
-    );
-    setFormData({ ...formData, weeklyActivities: newWeeklyActivities });
-  };
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
     try {
-      await axios
-        .post("http://localhost:3000/api/form-submission", formData)
-        .then((response) => {
-          console.log(response.data.message);
-          if (response.data.message === "Form data saved successfully!") {
-            hasPersonalData(true);
-          }
-        });
+      const response = await axios.post("/api/form-submission", dataToSubmit);
+      // console.log(response.data.message);
+      if (response.data.message === "Form data saved successfully!") {
+        hasPersonalData(true);
+      }
+      message.success("Personal Information Saved!");
     } catch (error) {
       console.error("Error saving form data:", error);
+      message.error("Something wrong");
     }
   };
+
+  useEffect(() => {
+    if (session && session.user) {
+      setFormData((prevFormData) => ({
+        ...prevFormData,
+        planOwner: String(session.user?.email),
+      }));
+      form.setFieldsValue({
+        planOwner: String(session.user?.email),
+      });
+    }
+  }, [session]);
 
   if (status === "loading") {
     return <div>Loading...</div>;
@@ -85,98 +83,106 @@ const Form1: React.FC<Form1Props> = ({ hasPersonalData }) => {
   if (status === "unauthenticated") {
     return <div>You need to sign in to access this form.</div>;
   }
-  useEffect(() => {
-    console.log(session);
-    if (session && session.user) {
-      setFormData((prevFormData) => ({
-        ...prevFormData,
-        planOwner: String(session.user?.email),
-      }));
-    }
-  }, [session]);
 
   return (
-    <div className="p-4">
+    <div className="">
       <h2 className="text-xl mb-4">Personal Information</h2>
-      <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-          <label className="block mb-2">Plan Name (Required)</label>
-          <input
-            type="text"
-            name="planName"
-            value={formData.planName}
-            onChange={handleChange}
-            className="w-full border px-2 py-1"
-            required
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block mb-2">Date of Birth (Required)</label>
-          <input
-            type="date"
-            name="dateOfBirth"
-            value={formData.dateOfBirth}
-            onChange={handleChange}
-            className="w-full border px-2 py-1"
-            required
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block mb-2">Height (Required)</label>
-          <input
-            type="text"
-            name="height"
-            value={formData.height}
-            onChange={handleChange}
-            className="w-full border px-2 py-1"
-            required
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block mb-2">Weight (Required)</label>
-          <input
-            type="text"
-            name="weight"
-            value={formData.weight}
-            onChange={handleChange}
-            className="w-full border px-2 py-1"
-            required
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block mb-2">Weekly Activities (Optional)</label>
-          {formData.weeklyActivities.map((activity, index) => (
-            <div key={index} className="flex mb-2">
-              <input
-                type="text"
-                value={activity.activity}
-                onChange={(e) => handleActivityChange(index, e)}
-                className="w-full border px-2 py-1 mr-2"
-              />
-              <button
-                type="button"
-                onClick={() => removeActivity(index)}
-                className="px-2 py-1 bg-red-500 text-white rounded"
-              >
-                Remove
-              </button>
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={addActivity}
-            className="px-4 py-2 bg-blue-500 text-white rounded"
-          >
-            Add Activity
-          </button>
-        </div>
-        <button
-          type="submit"
-          className="px-4 py-2 bg-green-500 text-white rounded"
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={handleSubmit}
+        initialValues={{
+          planName: formData.planName,
+          dateOfBirth: formData.dateOfBirth,
+          // ? moment(formData.dateOfBirth)
+          // : null,
+          height: formData.height,
+          weight: formData.weight,
+          weeklyActivities: formData.weeklyActivities.map((activity) => ({
+            activity: activity.activity,
+          })),
+        }}
+      >
+        <Form.Item
+          label="Plan Name"
+          name="planName"
+          rules={[{ required: true, message: "Please enter the plan name" }]}
         >
-          Submit
-        </button>
-      </form>
+          <Input placeholder="Enter plan name" />
+        </Form.Item>
+
+        <Form.Item
+          label="Date of Birth"
+          name="dateOfBirth"
+          rules={[
+            { required: true, message: "Please select the date of birth" },
+          ]}
+        >
+          <DatePicker style={{ width: "50%" }} />
+        </Form.Item>
+
+        <Form.Item
+          label="Height (cm)"
+          name="height"
+          rules={[{ required: true, message: "Please enter your height" }]}
+        >
+          <InputNumber
+            placeholder="Enter height"
+            min={0}
+            style={{ width: "50%" }}
+          />
+        </Form.Item>
+
+        <Form.Item
+          label="Weight (kg)"
+          name="weight"
+          rules={[{ required: true, message: "Please enter your weight" }]}
+        >
+          <InputNumber
+            placeholder="Enter weight"
+            min={0}
+            style={{ width: "50%" }}
+          />
+        </Form.Item>
+
+        <Form.Item label="Weekly Activities">
+          <Form.List name="weeklyActivities">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map(({ key, name }) => (
+                  <Space key={key} align="baseline" className="mr-2">
+                    <Form.Item
+                      name={[name, "activity"]}
+                      rules={[
+                        { required: true, message: "Please enter an activity" },
+                      ]}
+                    >
+                      <Input placeholder="Enter activity" />
+                    </Form.Item>
+                    <MinusCircleOutlined onClick={() => remove(name)} />
+                  </Space>
+                ))}
+                <Row justify="space-between">
+                  <Form.Item>
+                    <Button
+                      type="dashed"
+                      onClick={() => add()}
+                      icon={<PlusOutlined />}
+                    >
+                      Add Activity
+                    </Button>
+                  </Form.Item>{" "}
+                  <Form.Item>
+                    <Button type="primary" htmlType="submit">
+                      Submit
+                    </Button>
+                  </Form.Item>
+                </Row>
+              </>
+            )}
+          </Form.List>
+        </Form.Item>
+      </Form>
     </div>
   );
 };

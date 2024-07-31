@@ -25,7 +25,7 @@ export async function POST(request: Request) {
 
     // Parse the request body
     const formData = await request.json();
-    console.log("Received formData:", formData);
+    // console.log("Received formData:", formData);
     if (
       !formData.planOwner ||
       !formData.planName ||
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     }
     // Save the form data to the database
     const newFormData = new FormDataModel(formData);
-    console.log("Prepared newFormData:", newFormData);
+    // console.log("Prepared newFormData:", newFormData);
     await newFormData.save();
 
     // Return a success response

@@ -2,63 +2,70 @@
 import { FormEvent, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { Form, Input, Button, Typography, Space, Alert } from "antd";
 import Link from "next/link";
+
+const { Title, Text } = Typography;
+
 export default function Login() {
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
+
+  const handleSubmit = async (values: { email: string; password: string }) => {
     const res = await signIn("credentials", {
-      email: formData.get("email"),
-      password: formData.get("password"),
+      email: values.email,
+      password: values.password,
       redirect: false,
     });
     if (res?.error) {
       setError(res.error as string);
     }
     if (res?.ok) {
-      return router.push("/");
+      router.push("/");
     }
   };
-  return (
-    <>
-      <section className="w-full h-screen flex items-center justify-center">
-        <form
-          className="p-6 w-full max-w-[400px] flex flex-col justify-between items-center gap-2 
-        border border-solid border-black bg-white rounded"
-          onSubmit={handleSubmit}
-        >
-          {error && <div className="text-black">{error}</div>}
-          <h1 className="mb-5 w-full text-2xl font-bold">Sign In</h1>
-          <label className="w-full text-sm">Email</label>
-          <input
-            type="email"
-            placeholder="Email"
-            className="w-full h-8 border border-solid border-black rounded p-2"
-            name="email"
-          />
-          <label className="w-full text-sm">Password</label>
-          <div className="flex w-full">
-            <input
-              type="password"
-              placeholder="Password"
-              className="w-full h-8 border border-solid border-black rounded p-2"
-              name="password"
-            />
-          </div>
-          <button className="w-full border border-solid border-black rounded">
-            Sign In
-          </button>
 
-          <Link
-            href="/register"
-            className="text-sm text-[#888] transition duration-150 ease hover:text-black"
+  return (
+    <section className="w-full h-screen flex items-center justify-center">
+      <Form
+        name="login"
+        onFinish={handleSubmit}
+        className="w-full max-w-md"
+        initialValues={{ email: "", password: "" }}
+      >
+        {error && <Alert message={error} type="error" showIcon />}
+        <Title level={2} className="text-center mb-4">
+          Sign In
+        </Title>
+        <Form.Item
+          name="email"
+          rules={[{ required: true, message: "Please enter your email!" }]}
+        >
+          <Input type="email" placeholder="Email" size="large" allowClear />
+        </Form.Item>
+        <Form.Item
+          name="password"
+          rules={[{ required: true, message: "Please enter your password!" }]}
+        >
+          <Input.Password placeholder="Password" size="large" allowClear />
+        </Form.Item>
+        <Form.Item>
+          <Button type="primary" htmlType="submit" className="w-full">
+            Sign In
+          </Button>
+        </Form.Item>
+        <Form.Item>
+          <Space
+            direction="vertical"
+            size="small"
+            className="w-full text-center"
           >
-            Don't have an account?
-          </Link>
-        </form>
-      </section>
-    </>
+            <Link href="/register">
+              <Text type="secondary">Don't have an account? Register here</Text>
+            </Link>
+          </Space>
+        </Form.Item>
+      </Form>
+    </section>
   );
 }

@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Card, Button, Modal } from "antd";
+import { Card, Button, Modal, message } from "antd";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import axios from "axios";
 
 interface WeeklyActivity {
   activity: string;
@@ -11,20 +12,24 @@ interface WeeklyActivity {
 
 interface WeeklyPlanModalProps {
   selectedGoal: string | null;
+  planOwner: string;
   planName: string;
   dateOfBirth: string;
   height: string;
   weight: string;
   weeklyActivities: WeeklyActivity[];
+  triggerRefetch: () => void;
 }
 
 const WeeklyPlanModal: React.FC<WeeklyPlanModalProps> = ({
   selectedGoal,
+  planOwner,
   planName,
   dateOfBirth,
   height,
   weight,
   weeklyActivities,
+  triggerRefetch,
 }) => {
   const [responseContent, setResponseContent] = useState<string>("");
   const [isTyping, setIsTyping] = useState<boolean>(false);
@@ -35,7 +40,7 @@ const WeeklyPlanModal: React.FC<WeeklyPlanModalProps> = ({
     .join(
       ", "
     )}, Date of Birth:${dateOfBirth}. Give a brief answer not too long and also generate answer based on day of the week and format each day to be apart from other`;
-
+  //Axios is not suitable for data streaming
   const fetchLLMResponse = async () => {
     setIsTyping(true);
     try {
@@ -70,7 +75,39 @@ const WeeklyPlanModal: React.FC<WeeklyPlanModalProps> = ({
       setIsTyping(false);
     }
   };
-
+  const handleSubmitGenerateContent = async () => {
+    const workoutPlanData = {
+      planOwner: planOwner,
+      planName: planName,
+      responseContent: responseContent,
+      selectedGoal: selectedGoal,
+      dateOfBirth: dateOfBirth,
+      height: height,
+      weight: weight,
+      weeklyActivities: weeklyActivities,
+    };
+    try {
+      const response = await axios
+        .post(
+          `${process.env.NEXT_PUBLIC_URL}/api/weekly-workout/create`,
+          workoutPlanData
+        )
+        .then((response) => {
+          const workoutPlans = response.data;
+          // console.log(workoutPlans);
+          message.success("Workout plan saved!");
+          setIsModalOpen(false);
+          triggerRefetch();
+        })
+        .catch((error) => {
+          message.error("Something wrong");
+          console.log(error);
+        });
+    } catch (err) {
+      console.log(err);
+      // setError("Failed to load data");
+    }
+  };
   const showModal = () => {
     setIsModalOpen(true);
     fetchLLMResponse();
@@ -89,13 +126,12 @@ const WeeklyPlanModal: React.FC<WeeklyPlanModalProps> = ({
   };
   const handleSave = () => {
     if (responseContent) {
-      // Implement save functionality here
-      console.log("Save functionality not implemented yet.");
+      handleSubmitGenerateContent();
     }
   };
   return (
     <div className="">
-      <Button type="primary" onClick={showModal}>
+      <Button type="primary" onClick={showModal} disabled={!selectedGoal}>
         Generate Workout Plan
       </Button>
       <Modal
@@ -104,20 +140,23 @@ const WeeklyPlanModal: React.FC<WeeklyPlanModalProps> = ({
         onOk={handleOk}
         onCancel={handleCancel}
         footer={[
-          <Button key="regenerate" onClick={handleRegenerate}>
-            Regenerate Answer
-          </Button>,
-          <Button
-            key="save"
-            type="primary"
-            onClick={handleSave}
-            disabled={!responseContent}
-          >
-            Save
-          </Button>,
-          // <Button key="cancel" onClick={handleCancel}>
-          //   Cancel
-          // </Button>,
+          <>
+            {!isTyping && (
+              <>
+                <Button key="regenerate" onClick={handleRegenerate}>
+                  Regenerate Answer
+                </Button>
+                <Button
+                  key="save"
+                  type="primary"
+                  onClick={handleSave}
+                  disabled={!responseContent}
+                >
+                  Save
+                </Button>
+              </>
+            )}
+          </>,
         ]}
       >
         {responseContent ? (

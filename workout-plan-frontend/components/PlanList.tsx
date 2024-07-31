@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { message } from "antd";
 import PlanCard from "./PlanCard";
 import axios from "axios";
 interface WeeklyActivity {
@@ -19,8 +20,9 @@ interface PersonalData {
 }
 interface PersonalDataListProps {
   hasPersonalData: (exists: boolean) => void;
+  triggerRefetch: () => void;
 }
-function PlanList({ hasPersonalData }: PersonalDataListProps) {
+function PlanList({ hasPersonalData, triggerRefetch }: PersonalDataListProps) {
   const { data: session, status } = useSession();
   const [plan, setPlan] = useState<PersonalData[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -29,10 +31,10 @@ function PlanList({ hasPersonalData }: PersonalDataListProps) {
     const email = session?.user?.email;
     try {
       const response = await axios
-        .post(`${process.env.NEXT_PUBLIC_URL}/api/plans/queries/${email}`)
+        .post(`/api/plans/queries/${email}`)
         .then((response) => {
           const plans = response.data.plan;
-          console.log(plans);
+          // console.log(plans);
           setPlan(plans);
           hasPersonalData(plans.length > 0);
         })
@@ -48,6 +50,7 @@ function PlanList({ hasPersonalData }: PersonalDataListProps) {
     const updatedPlans = plan.filter((plan) => plan._id !== id);
     setPlan(updatedPlans);
     hasPersonalData(updatedPlans.length > 0);
+    message.success("Personal Information Deleted");
   };
   useEffect(() => {
     if (session && session.user && session.user.email) {
@@ -60,7 +63,12 @@ function PlanList({ hasPersonalData }: PersonalDataListProps) {
     <div>
       <div className="flex flex-row overflow-x-auto gap-6">
         {plan.map((item) => (
-          <PlanCard key={item._id} {...item} handleDelete={handleDelete} />
+          <PlanCard
+            key={item._id}
+            {...item}
+            handleDelete={handleDelete}
+            triggerRefetch={triggerRefetch}
+          />
         ))}
       </div>
     </div>
